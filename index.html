@@ -360,7 +360,7 @@
     <span>Acesse mais rápido, funciona offline!</span>
   </div>
   <button class="install-btn" id="installBtn">Instalar</button>
-  <button class="install-close" onclick="document.getElementById('installBanner').classList.remove('show')">✕</button>
+  <button class="install-close">✕</button>
 </div>
 
 <header>
@@ -1135,35 +1135,66 @@ window.addEventListener('load', () => {
 });
 
 // ===== PWA INSTALL =====
-let deferredPrompt;
+// ===== PWA INSTALL =====
+let deferredPrompt = null;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-// Mostrar banner após 3s se o app não estiver instalado como standalone
-setTimeout(() => {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  if (!isStandalone && !deferredPrompt) {
-    // Mostrar banner manual se beforeinstallprompt não foi disparado (iOS / já instalado)
-    const banner = document.getElementById('installBanner');
-    if (banner) banner.classList.add('show');
-  }
-}, 3000);
-
+// Captura o evento ANTES de tudo - não pode ter preventDefault atrasado
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  document.getElementById('installBanner').classList.add('show');
+  console.log('✅ beforeinstallprompt capturado!');
+  if (!isStandalone) mostrarBanner('android');
 });
 
+function mostrarBanner(tipo) {
+  const banner = document.getElementById('installBanner');
+  const installText = banner.querySelector('.install-text');
+  const installBtn = document.getElementById('installBtn');
+  if (tipo === 'ios') {
+    installText.innerHTML = '<strong>Instalar no iPhone/iPad</strong><span>Toque em <b>⎋ Compartilhar</b> → <b>"Tela de Início"</b></span>';
+    installBtn.textContent = '✓ OK';
+  } else {
+    installText.innerHTML = '<strong>Instalar app</strong><span>Acesso rápido, funciona offline!</span>';
+    installBtn.textContent = '📲 Instalar';
+  }
+  banner.classList.add('show');
+}
+
 document.getElementById('installBtn').addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  deferredPrompt = null;
+  const banner = document.getElementById('installBanner');
+  const installBtn = document.getElementById('installBtn');
+  if (deferredPrompt) {
+    // Android/Chrome — prompt nativo
+    try {
+      await deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      console.log('Resultado:', result.outcome);
+    } catch(err) {
+      console.log('Erro prompt:', err);
+    }
+    deferredPrompt = null;
+    banner.classList.remove('show');
+  } else {
+    // iOS ou sem prompt — só fecha
+    banner.classList.remove('show');
+  }
+});
+
+document.querySelector('.install-close').addEventListener('click', () => {
   document.getElementById('installBanner').classList.remove('show');
 });
 
 window.addEventListener('appinstalled', () => {
   document.getElementById('installBanner').classList.remove('show');
+  deferredPrompt = null;
 });
+
+// iOS: mostrar instrução após 3s
+if (isIOS && !isStandalone) {
+  setTimeout(() => mostrarBanner('ios'), 3000);
+}
 
 // ===== SERVICE WORKER =====
 if ('serviceWorker' in navigator) {
