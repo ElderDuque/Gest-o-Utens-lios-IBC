@@ -222,6 +222,49 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .report-card h3{font-family:"Playfair Display",serif;color:var(--gold);margin-bottom:12px;font-size:16px}
 .report-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
 
+
+/* TAGS */
+.tag-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;cursor:pointer;transition:.2s;border:1px solid transparent}
+.tag-chip:hover{opacity:.8}
+.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tags-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.tag-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.tag-card-left{display:flex;align-items:center;gap:10px}
+.tag-color-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+
+/* VALIDADE */
+.valid-ok{background:rgba(76,175,122,0.15);border-color:rgba(76,175,122,0.4);color:#4caf7a}
+.valid-warn{background:rgba(224,123,42,0.15);border-color:rgba(224,123,42,0.4);color:#e07b2a}
+.valid-bad{background:rgba(201,76,76,0.15);border-color:rgba(201,76,76,0.4);color:#c94c4c}
+.valid-none{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:var(--muted)}
+
+/* QTDE RÁPIDA */
+.qty-ctrl{display:flex;align-items:center;gap:6px}
+.qty-ctrl button{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;
+  font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.2s}
+.qty-minus{background:rgba(201,76,76,0.2);color:#f88}
+.qty-plus{background:rgba(76,175,122,0.2);color:#4caf7a}
+.qty-num{font-size:15px;font-weight:700;color:#fff;min-width:30px;text-align:center}
+
+/* CAMPOS EXTRAS */
+.extra-field-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.extra-field-row input{flex:1;padding:8px 12px;background:rgba(255,255,255,0.07);
+  border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;font-family:"DM Sans",sans-serif}
+.extra-field-row button{background:rgba(201,76,76,0.2);border:none;border-radius:8px;
+  color:#f88;padding:8px 10px;cursor:pointer;font-size:14px}
+
+/* SCAN VALIDADE */
+#scanValModal .modal{max-width:440px}
+.scan-preview-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3}
+#scanVideo{width:100%;height:100%;object-fit:cover}
+.scan-line{position:absolute;left:10%;right:10%;height:2px;background:var(--gold);
+  animation:scanMove 2s ease-in-out infinite;top:50%}
+@keyframes scanMove{0%,100%{top:30%}50%{top:70%}}
+.scan-result-box{background:rgba(201,168,76,0.1);border:1px solid var(--gold);
+  border-radius:10px;padding:12px;margin-top:12px;font-size:13px;color:var(--gold-light)}
+
 /* SPLASH */
 #splash{position:fixed;inset:0;z-index:9999;
   background:linear-gradient(160deg,#1a0a0a 0%,#3d1010 40%,#8B2020 100%);
@@ -304,6 +347,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <button onclick="showTab('itens',this)">🍽️ <span>Itens</span></button>
     <button onclick="showTab('emprestimos',this)">🤝 <span>Empréstimos</span></button>
     <button onclick="showTab('ocorrencias',this)">⚠️ <span>Ocorrências</span></button>
+    <button onclick="showTab('tags',this)">🏷️ <span>Tags</span></button>
     <button onclick="showTab('relatorios',this)">📊 <span>Relatórios</span></button>
   </nav>
 </header>
@@ -435,6 +479,22 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════
+     ABA TAGS
+═══════════════════════════════════════════ -->
+<div id="tab-tags" class="tab-content">
+  <div class="section-header">
+    <div class="section-title">🏷️ Tags / Etiquetas</div>
+    <button class="btn-gold btn" onclick="abrirModalTag()">＋ Nova Tag</button>
+  </div>
+  <div class="tags-grid" id="tagsGrid"></div>
+  <div class="empty" id="tagsEmpty" style="display:none">
+    <div class="empty-icon">🏷️</div>
+    <p>Nenhuma tag criada ainda.<br>Crie tags para organizar seus itens!</p>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════
      ABA RELATÓRIOS
 ═══════════════════════════════════════════ -->
@@ -442,6 +502,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   <div class="section-title" style="margin-bottom:20px">📊 Relatórios</div>
   <div class="report-grid" id="relGrid"></div>
   <button class="btn btn-ghost" onclick="exportarJSON()" style="margin-top:10px">⬇️ Exportar dados JSON</button>
+  <button class="btn btn-ghost" onclick="abrirScanVal()" style="margin-top:10px;margin-left:8px">📅 Verificar Validade</button>
 </div>
 
 </main>
@@ -544,6 +605,67 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   </div>
 </div>
 
+
+<!-- Modal: Tag -->
+<div class="modal-overlay" id="modal-tag">
+  <div class="modal">
+    <h2 id="tituloModalTag">🏷️ Nova Tag</h2>
+    <div class="form-group">
+      <label>Nome da Tag *</label>
+      <input type="text" id="tagNome" placeholder="Ex: Frágil, Urgente, Vencendo...">
+    </div>
+    <div class="form-group">
+      <label>Cor</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px" id="tagCores">
+        <div onclick="selecionarCor(this,'#C9A84C')" style="width:28px;height:28px;border-radius:50%;background:#C9A84C;cursor:pointer;border:3px solid transparent"></div>
+        <div onclick="selecionarCor(this,'#4caf7a')" style="width:28px;height:28px;border-radius:50%;background:#4caf7a;cursor:pointer;border:3px solid transparent"></div>
+        <div onclick="selecionarCor(this,'#c94c4c')" style="width:28px;height:28px;border-radius:50%;background:#c94c4c;cursor:pointer;border:3px solid transparent"></div>
+        <div onclick="selecionarCor(this,'#e07b2a')" style="width:28px;height:28px;border-radius:50%;background:#e07b2a;cursor:pointer;border:3px solid transparent"></div>
+        <div onclick="selecionarCor(this,'#6c8ebf')" style="width:28px;height:28px;border-radius:50%;background:#6c8ebf;cursor:pointer;border:3px solid transparent"></div>
+        <div onclick="selecionarCor(this,'#9b59b6')" style="width:28px;height:28px;border-radius:50%;background:#9b59b6;cursor:pointer;border:3px solid transparent"></div>
+        <div onclick="selecionarCor(this,'#aaaaaa')" style="width:28px;height:28px;border-radius:50%;background:#aaaaaa;cursor:pointer;border:3px solid transparent"></div>
+      </div>
+      <input type="hidden" id="tagCor" value="#C9A84C">
+    </div>
+    <div class="form-group">
+      <label>Emoji (opcional)</label>
+      <input type="text" id="tagEmoji" placeholder="⚠️ 🔴 ✅ 📦" maxlength="4">
+    </div>
+    <input type="hidden" id="editTagId">
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('tag')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarTag()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Scan Validade -->
+<div class="modal-overlay" id="modal-scanVal">
+  <div class="modal" style="max-width:440px">
+    <h2>📅 Verificar Validade</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Aponte a câmera para a data de validade do produto</p>
+    <div class="scan-preview-wrap">
+      <video id="scanVideo" autoplay playsinline muted></video>
+      <div class="scan-line"></div>
+    </div>
+    <div id="scanResultBox" style="display:none" class="scan-result-box"></div>
+    <div style="margin-top:14px">
+      <div class="form-group">
+        <label>📅 Ou digite a data de validade manualmente</label>
+        <input type="date" id="validadeManual">
+      </div>
+      <div class="form-group">
+        <label>Vincular ao item (opcional)</label>
+        <select id="validadeItemId"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharScanVal()">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarValidade()">💾 Salvar Validade</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Item -->
 <div class="modal-overlay" id="modal-item">
   <div class="modal">
@@ -611,6 +733,23 @@ tr:hover td{background:rgba(255,255,255,0.02)}
         <input type="file" id="itemFotoCam" accept="image/*" capture="environment" onchange="prevFoto(this,'itemFotoPreview','itemFotoPlaceholder')" style="display:none">
         <input type="file" id="itemFotoGal" accept="image/*" onchange="prevFoto(this,'itemFotoPreview','itemFotoPlaceholder')" style="display:none">
       </div>
+    </div>
+
+    <div class="form-group">
+      <label>🏷️ Tags</label>
+      <div id="itemTagsSelect" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+    </div>
+    <div class="form-group">
+      <label>📅 Data de Validade</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="date" id="itemValidade" style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:10px;color:#fff;font-size:14px">
+        <button type="button" onclick="abrirScanVal('item')" class="btn btn-ghost btn-sm" style="white-space:nowrap">📷 Ler</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>📋 Campos Adicionais <small style="color:var(--muted);font-weight:400">(personalizados)</small></label>
+      <div id="extraFieldsList"></div>
+      <button type="button" onclick="adicionarCampoExtra()" class="btn btn-ghost btn-sm" style="margin-top:6px">＋ Adicionar campo</button>
     </div>
     <input type="hidden" id="editItemId">
     <div class="modal-footer">
@@ -699,6 +838,7 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 // ═══════════════════════════════════════════
 let data = JSON.parse(localStorage.getItem('ibcdata2') || '{}');
 if (!data.ambientes) data.ambientes = [];
+if (!data.tags) data.tags = [];
 if (!data.moveis)    data.moveis    = [];
 if (!data.items)     data.items     = [];
 if (!data.emprestimos) data.emprestimos = [];
@@ -726,6 +866,7 @@ function showTab(name, btn) {
   if (name === 'emprestimos') { popularSelectItems(); renderEmprestimos(); }
   if (name === 'ocorrencias') { popularSelectItems(); renderOcorrencias(); }
   if (name === 'relatorios') renderRelatorios();
+  if (name === 'tags') renderTags();
   if (name === 'busca') executarBusca();
 }
 
@@ -1123,6 +1264,9 @@ function abrirModalItem(ambId, movelId) {
   document.getElementById('itemAmbId').value = ambId||'';
   document.getElementById('wrap-movel').style.display='none';
   document.getElementById('wrap-posicao').style.display='none';
+  document.getElementById('itemValidade').value='';
+  renderTagsSelect([]);
+  renderCamposExtras([]);
   if (ambId) {
     atualizarMoveis();
     if (movelId) setTimeout(()=>{document.getElementById('itemMovelId').value=movelId;atualizarPosicoes();},50);
@@ -1141,6 +1285,9 @@ function editarItem(id) {
   document.getElementById('itemQtdMin').value=item.qtdMin||0;
   document.getElementById('itemDesc').value=item.desc||'';
   document.getElementById('itemLocObs').value=item.locObs||'';
+  document.getElementById('itemValidade').value=item.validade||'';
+  renderTagsSelect(item.tags||[]);
+  renderCamposExtras(item.camposExtras||[]);
   resetFoto('itemFotoPreview','itemFotoPlaceholder');
   if (item.foto) {
     document.getElementById('itemFotoPreview').src=item.foto;
@@ -1194,7 +1341,10 @@ function salvarItem() {
     ambId:document.getElementById('itemAmbId').value,
     movelId:document.getElementById('itemMovelId').value,
     posicao:document.getElementById('itemPosicao').value,
-    locObs:document.getElementById('itemLocObs').value, foto
+    locObs:document.getElementById('itemLocObs').value,
+    validade:document.getElementById('itemValidade').value,
+    tags:getTagsSelecionadas(),
+    camposExtras:getCamposExtras(), foto
   };
   if (id) {
     const i=data.items.findIndex(x=>x.id===id);
@@ -1261,7 +1411,16 @@ function renderItems() {
         <div class="item-cat">${catEmoji[item.cat]||'📦'} ${item.cat}</div>
         ${loc?`<div class="item-loc">📍 ${loc}</div>`:''}
         <div class="item-qty"><span class="qty-badge ${qC}">${qL}</span><strong>${qtd} un.</strong></div>
+        <div class="tags-wrap" style="margin-bottom:6px">
+          ${(item.tags||[]).map(tid=>{const t=data.tags.find(x=>x.id===tid);return t?`<span class="tag-chip" style="background:${t.cor}22;border-color:${t.cor};color:${t.cor}">${t.emoji||''} ${t.nome}</span>`:''}).join('')}
+        </div>
+        ${(()=>{const v=calcValidadeStatus(item.validade);return v?`<div class="tag-chip ${v.cls}" style="margin-bottom:6px">${v.txt}</div>`:''})()}
         <div class="item-actions">
+          <div class="qty-ctrl">
+            <button class="qty-minus" onclick="ajustarQtd('${item.id}',-1);event.stopPropagation()">−</button>
+            <span class="qty-num" id="qtd_${item.id}">${qtd}</span>
+            <button class="qty-plus" onclick="ajustarQtd('${item.id}',1);event.stopPropagation()">+</button>
+          </div>
           <button class="btn btn-ghost btn-sm" onclick="verItem('${item.id}')">👁️ Ver</button>
           <button class="btn btn-ghost btn-sm" onclick="editarItem('${item.id}')">✏️</button>
           <button class="btn btn-red btn-sm" onclick="excluirItem('${item.id}')">🗑️</button>
@@ -1305,6 +1464,9 @@ function verItem(id) {
         <button onclick="devolverEmprestimo('${e.id}');closeModal('verItem');renderItems()" class="btn btn-green btn-sm">✅ Devolver</button>
       </div>`).join('')}
     </div>`:''}
+    ${item.validade ? `<div style="margin-bottom:12px">${(()=>{const v=calcValidadeStatus(item.validade);return `<div class="tag-chip ${v?v.cls:'valid-none'}" style="font-size:13px;padding:6px 14px">📅 Validade: ${item.validade.split('-').reverse().join('/')} — ${v?v.txt:'—'}</div>`;})()}</div>` : ''}
+    ${(item.tags||[]).length ? `<div style="margin-bottom:12px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Tags</div><div class="tags-wrap">${item.tags.map(tid=>{const t=data.tags.find(x=>x.id===tid);return t?`<span class="tag-chip" style="background:${t.cor}22;border-color:${t.cor};color:${t.cor}">${t.emoji||''} ${t.nome}</span>`:''}).join('')}</div></div>` : ''}
+    ${(item.camposExtras||[]).length ? `<div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;margin-bottom:12px">${item.camposExtras.map(c=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px"><span style="color:var(--muted)">${c.nome}</span><strong>${c.valor}</strong></div>`).join('')}</div>` : ''}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('verItem')">Fechar</button>
       <button class="btn btn-gold" onclick="editarItem('${item.id}');closeModal('verItem')">✏️ Editar</button>
@@ -1444,6 +1606,15 @@ function renderRelatorios() {
       ${empsAbertos.length?empsAbertos.map(e=>`<div class="report-row"><span>${e.responsavel} — ${e.itemNome}</span><strong>${e.qtd} un.</strong></div>`).join(''):'<p style="color:var(--muted);font-size:13px">Nenhum empréstimo em aberto.</p>'}
     </div>
     <div class="report-card">
+      <h3>📅 Validades</h3>
+      ${(()=>{
+        const venc=data.items.filter(i=>i.validade&&calcValidadeStatus(i.validade)&&calcValidadeStatus(i.validade).diff<=30).sort((a,b)=>new Date(a.validade)-new Date(b.validade));
+        return venc.length
+          ? venc.map(i=>{const v=calcValidadeStatus(i.validade);return `<div class="report-row"><span>${i.nome}</span><strong class="${v.cls}" style="font-size:12px">${v.txt}</strong></div>`;}).join('')
+          : '<p style="color:var(--muted);font-size:13px">✅ Nenhum item vencendo em 30 dias!</p>';
+      })()}
+    </div>
+    <div class="report-card">
       <h3>⚠️ Estoque Baixo</h3>
       ${itensBaixos.length?itensBaixos.map(i=>`<div class="report-row"><span>${i.nome}</span><strong style="color:var(--red)">${i.qtd} / mín ${i.qtdMin}</strong></div>`).join(''):'<p style="color:var(--muted);font-size:13px">Todos os estoques ok!</p>'}
     </div>
@@ -1483,6 +1654,235 @@ document.getElementById('installBtn').addEventListener('click',async()=>{
 document.querySelector('.install-close').addEventListener('click',()=>document.getElementById('installBanner').classList.remove('show'));
 window.addEventListener('appinstalled',()=>{document.getElementById('installBanner').classList.remove('show');deferredPrompt=null;});
 if(isIOS&&!isStandalone) setTimeout(()=>document.getElementById('installBanner').classList.add('show'),3000);
+
+
+// ═══════════════════════════════════════════
+// TAGS
+// ═══════════════════════════════════════════
+if (!data.tags) data.tags = [];
+
+function abrirModalTag(id) {
+  document.getElementById('tagNome').value = '';
+  document.getElementById('tagEmoji').value = '';
+  document.getElementById('tagCor').value = '#C9A84C';
+  document.getElementById('editTagId').value = '';
+  document.getElementById('tituloModalTag').textContent = '🏷️ Nova Tag';
+  document.querySelectorAll('#tagCores div').forEach(d => d.style.border = '3px solid transparent');
+  document.querySelector('#tagCores div').style.border = '3px solid #fff';
+  if (id) {
+    const t = data.tags.find(x => x.id === id);
+    if (t) {
+      document.getElementById('tituloModalTag').textContent = '✏️ Editar Tag';
+      document.getElementById('editTagId').value = t.id;
+      document.getElementById('tagNome').value = t.nome;
+      document.getElementById('tagEmoji').value = t.emoji || '';
+      document.getElementById('tagCor').value = t.cor;
+      document.querySelectorAll('#tagCores div').forEach(d => {
+        d.style.border = d.style.background === t.cor || d.style.backgroundColor === t.cor ? '3px solid #fff' : '3px solid transparent';
+      });
+    }
+  }
+  openModal('tag');
+}
+
+function selecionarCor(el, cor) {
+  document.querySelectorAll('#tagCores div').forEach(d => d.style.border = '3px solid transparent');
+  el.style.border = '3px solid #fff';
+  document.getElementById('tagCor').value = cor;
+}
+
+function salvarTag() {
+  const nome = document.getElementById('tagNome').value.trim();
+  if (!nome) { alert('Informe o nome da tag!'); return; }
+  const id = document.getElementById('editTagId').value;
+  const obj = { nome, cor: document.getElementById('tagCor').value, emoji: document.getElementById('tagEmoji').value.trim() };
+  if (id) {
+    const i = data.tags.findIndex(t => t.id === id);
+    data.tags[i] = { ...data.tags[i], ...obj };
+  } else {
+    obj.id = 'T' + Date.now();
+    data.tags.push(obj);
+  }
+  save(); closeModal('tag'); renderTags();
+}
+
+function excluirTag(id) {
+  if (!confirm('Excluir esta tag?')) return;
+  data.tags = data.tags.filter(t => t.id !== id);
+  data.items.forEach(i => { if (i.tags) i.tags = i.tags.filter(t => t !== id); });
+  save(); renderTags();
+}
+
+function renderTags() {
+  const grid = document.getElementById('tagsGrid');
+  const empty = document.getElementById('tagsEmpty');
+  if (!data.tags.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = data.tags.map(t => {
+    const nItens = data.items.filter(i => i.tags && i.tags.includes(t.id)).length;
+    return `<div class="tag-card">
+      <div class="tag-card-left">
+        <div class="tag-color-dot" style="background:${t.cor}"></div>
+        <div>
+          <div style="font-weight:600;font-size:14px;color:#fff">${t.emoji || ''} ${t.nome}</div>
+          <div style="font-size:11px;color:var(--muted)">${nItens} item(ns)</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="abrirModalTag('${t.id}')" class="btn btn-ghost btn-sm">✏️</button>
+        <button onclick="excluirTag('${t.id}')" class="btn btn-red btn-sm">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Tags no formulário de item ──────────────────────────────────────
+function renderTagsSelect(selecionadas) {
+  const div = document.getElementById('itemTagsSelect');
+  if (!data.tags.length) {
+    div.innerHTML = '<span style="font-size:12px;color:var(--muted)">Nenhuma tag criada ainda. Crie em "Tags".</span>';
+    return;
+  }
+  div.innerHTML = data.tags.map(t => {
+    const sel = selecionadas && selecionadas.includes(t.id);
+    return `<div class="tag-chip" onclick="toggleTagItem('${t.id}',this)"
+      data-id="${t.id}"
+      style="background:${sel ? t.cor+'33' : 'rgba(255,255,255,0.06)'};
+             border-color:${sel ? t.cor : 'rgba(255,255,255,0.1)'};
+             color:${sel ? t.cor : 'rgba(255,255,255,0.5)'}">
+      ${t.emoji || ''} ${t.nome}
+    </div>`;
+  }).join('');
+}
+
+function toggleTagItem(id, el) {
+  const t = data.tags.find(x => x.id === id);
+  const sel = el.style.borderColor === t.cor || el.style.borderColor.includes(t.cor.replace('#',''));
+  if (sel) {
+    el.style.background = 'rgba(255,255,255,0.06)';
+    el.style.borderColor = 'rgba(255,255,255,0.1)';
+    el.style.color = 'rgba(255,255,255,0.5)';
+  } else {
+    el.style.background = t.cor + '33';
+    el.style.borderColor = t.cor;
+    el.style.color = t.cor;
+  }
+}
+
+function getTagsSelecionadas() {
+  const chips = document.querySelectorAll('#itemTagsSelect .tag-chip');
+  const sel = [];
+  chips.forEach(c => {
+    const t = data.tags.find(x => x.id === c.dataset.id);
+    if (t && c.style.borderColor === t.cor) sel.push(t.id);
+  });
+  return sel;
+}
+
+// ── Campos extras ──────────────────────────────────────────────────
+function adicionarCampoExtra(nome, valor) {
+  const lista = document.getElementById('extraFieldsList');
+  const div = document.createElement('div');
+  div.className = 'extra-field-row';
+  div.innerHTML = `
+    <input type="text" placeholder="Nome do campo" value="${nome||''}" class="extra-nome">
+    <input type="text" placeholder="Valor" value="${valor||''}" class="extra-valor">
+    <button type="button" onclick="this.parentElement.remove()">✕</button>`;
+  lista.appendChild(div);
+}
+
+function getCamposExtras() {
+  const rows = document.querySelectorAll('#extraFieldsList .extra-field-row');
+  const campos = [];
+  rows.forEach(r => {
+    const n = r.querySelector('.extra-nome').value.trim();
+    const v = r.querySelector('.extra-valor').value.trim();
+    if (n) campos.push({ nome: n, valor: v });
+  });
+  return campos;
+}
+
+function renderCamposExtras(campos) {
+  document.getElementById('extraFieldsList').innerHTML = '';
+  (campos || []).forEach(c => adicionarCampoExtra(c.nome, c.valor));
+}
+
+// ═══════════════════════════════════════════
+// VALIDADE — SCAN + MANUAL
+// ═══════════════════════════════════════════
+let scanStream = null;
+let scanItemContext = null;
+
+function abrirScanVal(ctx) {
+  scanItemContext = ctx;
+  document.getElementById('scanResultBox').style.display = 'none';
+  document.getElementById('scanResultBox').textContent = '';
+  document.getElementById('validadeManual').value = '';
+  popularSelectItems();
+  // Popular select de itens no modal de scan
+  const sel = document.getElementById('validadeItemId');
+  sel.innerHTML = '<option value="">— Vincular a um item (opcional) —</option>' +
+    data.items.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+  openModal('scanVal');
+  iniciarCameraScan();
+}
+
+async function iniciarCameraScan() {
+  const video = document.getElementById('scanVideo');
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = scanStream;
+    // Tentar ler texto via OCR simulado (baseado em input manual)
+    // Scanner real de data requer Tesseract — usamos abordagem híbrida
+  } catch(e) {
+    console.log('Câmera não disponível:', e);
+  }
+}
+
+function fecharScanVal() {
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  closeModal('scanVal');
+}
+
+function salvarValidade() {
+  const data_val = document.getElementById('validadeManual').value;
+  if (!data_val) { alert('Informe a data de validade!'); return; }
+  const itemId = document.getElementById('validadeItemId').value;
+  if (itemId) {
+    const item = data.items.find(i => i.id === itemId);
+    if (item) { item.validade = data_val; save(); }
+  }
+  // Se veio do modal de item, preenche o campo de validade
+  const campItem = document.getElementById('itemValidade');
+  if (campItem) campItem.value = data_val;
+  fecharScanVal();
+  renderItems();
+  alert('✅ Validade salva!');
+}
+
+function calcValidadeStatus(validade) {
+  if (!validade) return null;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const val = new Date(validade + 'T00:00:00');
+  const diff = Math.ceil((val - hoje) / (1000*60*60*24));
+  if (diff < 0) return { cls: 'valid-bad', txt: '❌ Vencido', diff };
+  if (diff <= 30) return { cls: 'valid-warn', txt: `⚠️ Vence em ${diff}d`, diff };
+  return { cls: 'valid-ok', txt: `✅ Válido (${diff}d)`, diff };
+}
+
+
+// ── Ajuste rápido de quantidade ────────────────────────────────────
+function ajustarQtd(id, delta) {
+  const item = data.items.find(i => i.id === id);
+  if (!item) return;
+  const nova = Math.max(0, Number(item.qtd) + delta);
+  item.qtd = nova;
+  save();
+  const el = document.getElementById('qtd_' + id);
+  if (el) el.textContent = nova;
+  // Atualizar cor do badge
+  renderItems();
+}
 
 // ═══════════════════════════════════════════
 // SERVICE WORKER
